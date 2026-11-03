@@ -3,6 +3,7 @@
 --   admin@ashera.local
 --   user@ashera.local
 -- Then use the final INSERT statements to register them in ashera_members.
+-- Deploy supabase/functions/admin-set-password before using password changes in the app.
 
 create table if not exists public.ashera_members (
   user_id uuid primary key references auth.users (id) on delete cascade,

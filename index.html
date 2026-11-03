@@ -509,6 +509,7 @@ html[data-ux-contrast="1"] :focus-visible{outline:4px solid #0b5fff!important;ou
 .cloud-login-backdrop{position:fixed;inset:0;z-index:100;background:#102519bb;display:grid;place-items:center;padding:16px}
 .cloud-login-backdrop[hidden]{display:none}
 .cloud-login-card{width:min(420px,100%);background:#fff;border-radius:16px;padding:20px;box-shadow:0 18px 60px #0005}
+.cloud-login-card.cloud-admin-card{width:min(760px,100%);max-height:min(90vh,820px);overflow:auto}
 .cloud-login-card h2{margin:0 0 8px;color:#1f3b2d}
 .cloud-login-card p{color:#59675e;font-size:13px;line-height:1.7}
 .cloud-login-card label{display:block;margin:12px 0 5px;font-weight:700}
@@ -517,9 +518,13 @@ html[data-ux-contrast="1"] :focus-visible{outline:4px solid #0b5fff!important;ou
 .cloud-login-actions button{flex:1;min-height:42px}
 .cloud-login-error{color:#a33!important;min-height:1.5em}
 .cloud-members-list{display:grid;gap:8px;margin:14px 0}
-.cloud-member{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border:1px solid #dce7dd;border-radius:10px}
+.cloud-member{display:grid;grid-template-columns:minmax(120px,1fr) minmax(150px,1.3fr) auto;align-items:center;gap:12px;padding:12px;border:1px solid #dce7dd;border-radius:10px}
 .cloud-member small{display:block;color:#68796e}
 .cloud-member button{min-width:100px}
+.cloud-member-password{display:flex;gap:6px;min-width:0}
+.cloud-member-password input{min-width:0;min-height:40px}
+.cloud-member-password button{white-space:nowrap}
+@media(max-width:600px){.cloud-member{grid-template-columns:1fr}.cloud-member-password{width:100%}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head><body>
@@ -545,7 +550,7 @@ html[data-ux-contrast="1"] :focus-visible{outline:4px solid #0b5fff!important;ou
 <button onclick="exportXlsx()" title="تصدير كل الأسماء الثلاثية إلى Excel مرتبة لكل فرع">📊 Excel كامل</button>
 <button class="g" onclick="bak()">💾 نسخة</button>
 <button class="g" onclick="document.getElementById('f').click()">📂 استرجاع</button>
-<button class="g" id="cloudManageButton" type="button" hidden>👥 إدارة المستخدمين</button>
+<button class="g" id="cloudManageButton" type="button" hidden>👥 لوحة المدير</button>
 <button class="g" id="cloudAuthButton" type="button">☁ دخول للحفظ السحابي</button>
 <span class="save-state" id="saveState" role="status" aria-live="polite">✓ البيانات محفوظة</span>
 <input type="file" id="f" accept=".json,application/json" hidden></div></header>
@@ -569,9 +574,9 @@ html[data-ux-contrast="1"] :focus-visible{outline:4px solid #0b5fff!important;ou
  </form>
 </div>
  <div id="cloudMembersBackdrop" class="cloud-login-backdrop" hidden>
-  <section class="cloud-login-card" role="dialog" aria-modal="true" aria-labelledby="cloudMembersTitle">
-   <h2 id="cloudMembersTitle">إدارة حساب المستخدم</h2>
-   <p>إيقاف الحساب يمنع دخوله إلى بيانات الشجرة السحابية. إنشاء الحسابات يتم من لوحة Supabase.</p>
+  <section class="cloud-login-card cloud-admin-card" role="dialog" aria-modal="true" aria-labelledby="cloudMembersTitle">
+   <h2 id="cloudMembersTitle">لوحة إدارة الحسابات</h2>
+   <p>هذه اللوحة خاصة بالمدير. يمكنك إيقاف حساب المستخدم أو تفعيل الحساب وتعيين كلمة مرور جديدة.</p>
    <div id="cloudMembersList" class="cloud-members-list"></div>
    <p id="cloudMembersError" class="cloud-login-error" role="alert"></p>
    <div class="cloud-login-actions"><button type="button" class="g" id="cloudMembersClose">إغلاق</button></div>
@@ -2238,16 +2243,47 @@ window.route();
     membersList.innerHTML = data.map(member => `
       <article class="cloud-member">
         <div><b>${esc(member.username)}</b><small>${member.role === 'admin' ? 'مدير' : 'مستخدم'} · ${member.active ? 'نشط' : 'موقوف'}</small></div>
-        ${member.role === 'user'
-          ? `<button type="button" class="${member.active ? 'r' : ''}" data-member-id="${esc(member.user_id)}" data-active="${member.active}">${member.active ? 'إيقاف الحساب' : 'تفعيل الحساب'}</button>`
+        ${member.role === 'user' ? `
+          <form class="cloud-member-password" data-member-password-form>
+            <input type="password" name="password" autocomplete="new-password" minlength="10" required aria-label="كلمة المرور الجديدة للمستخدم" placeholder="كلمة المرور الجديدة (10 أحرف على الأقل)">
+            <button type="submit">تعيين</button>
+          </form>
+          <button type="button" class="${member.active ? 'r' : ''}" data-member-id="${esc(member.user_id)}" data-active="${member.active}">${member.active ? 'إيقاف الحساب' : 'تفعيل الحساب'}</button>`
           : ''}
       </article>`).join('');
+    membersList.querySelectorAll('form[data-member-password-form]').forEach(passwordForm => {
+      passwordForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const passwordInput = passwordForm.elements.namedItem('password');
+        const passwordButton = passwordForm.querySelector('button[type="submit"]');
+        membersError.textContent = '';
+        passwordButton.disabled = true;
+        try {
+          const password = passwordInput.value;
+          if (password.length < 10) throw new Error('كلمة المرور يجب أن تكون 10 أحرف على الأقل.');
+          const { error: functionError } = await client.functions.invoke('admin-set-password', {
+            body: { username: 'user', password }
+          });
+          if (functionError) throw functionError;
+          passwordForm.reset();
+          membersError.textContent = 'تم تغيير كلمة مرور المستخدم.';
+        } catch (error) {
+          console.error('Admin password update failed', error);
+          membersError.textContent = 'تعذر تغيير كلمة المرور. تأكد من نشر دالة الإدارة في Supabase ثم أعد المحاولة.';
+        } finally {
+          passwordButton.disabled = false;
+        }
+      });
+    });
     membersList.querySelectorAll('button[data-member-id]').forEach(button => {
       button.addEventListener('click', async () => {
+        const enable = button.dataset.active === 'true';
+        if (enable && !confirm('إيقاف حساب المستخدم؟ سيفقد الوصول إلى بيانات الشجرة السحابية.')) return;
         button.disabled = true;
+        membersError.textContent = '';
         const { error: updateError } = await client
           .from('ashera_members')
-          .update({ active: button.dataset.active !== 'true' })
+          .update({ active: !enable })
           .eq('user_id', button.dataset.memberId)
           .eq('role', 'user');
         if (updateError) {
