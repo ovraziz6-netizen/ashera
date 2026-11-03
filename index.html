@@ -2287,8 +2287,14 @@ window.route();
           if (new TextEncoder().encode(password).byteLength > 72) {
             throw new Error('كلمة المرور طويلة جدًا. استخدم عددًا أقل من الأحرف، خصوصًا إذا كانت بالعربية.');
           }
+          const { data: refreshedSession, error: refreshError } = await client.auth.refreshSession();
+          if (refreshError || !refreshedSession.session) {
+            console.error('Could not refresh the administrator session', refreshError);
+            throw new Error('انتهت جلسة المدير أو تعذر تجديدها. سجّل الخروج ثم الدخول مجددًا.');
+          }
           const { error: functionError } = await client.functions.invoke('admin-set-password', {
-            body: { username: 'user', password }
+            body: { username: 'user', password },
+            headers: { Authorization: `Bearer ${refreshedSession.session.access_token}` }
           });
           if (functionError) {
             let message = functionError.message;
@@ -2296,6 +2302,9 @@ window.route();
               try {
                 const responseBody = await functionError.context.clone().json();
                 if (typeof responseBody.error === 'string') message = responseBody.error;
+                if (responseBody.error === 'Invalid session.') {
+                  message = 'انتهت جلسة المدير. سجّل الخروج ثم الدخول مجددًا وحاول مرة أخرى.';
+                }
               } catch (parseError) {
                 console.warn('Could not read the password update error response', parseError);
               }
