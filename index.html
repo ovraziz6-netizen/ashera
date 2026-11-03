@@ -421,8 +421,12 @@ html[data-layout-mode="phone-portrait"] .ux-legend{display:none}
 .ux-backup{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:11px 14px;border-radius:14px;background:#fff8e4;border:1px solid #ecd48f;color:#6a4b06;font-size:13.5px;line-height:1.7}
 .ux-backup span{flex:1 1 260px}
 .ux-backup button{min-height:38px;border-radius:10px}
-.ux-tips{margin:0 0 12px;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,#f0f7f2,#fbf7ea);border:1px solid #d4e3d8}
-.ux-tips h3{margin:0 0 8px;font-size:15px;color:#1f4a31}
+.ux-tips{margin:0 0 12px;padding:12px 14px;border-radius:14px;background:#f5f8f5;border:1px solid #dce5dd}
+.ux-tips>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none}
+.ux-tips>summary::-webkit-details-marker{display:none}
+.ux-tips>summary::after{content:"＋";display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:9px;background:#e8f0e9;color:#315d3c;font-size:16px;font-weight:800}
+.ux-tips[open]>summary::after{content:"−"}
+.ux-tips h3{margin:0;font-size:14px;color:#1f4a31}
 .ux-tips ul{list-style:none;margin:0 0 10px;padding:0;border:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px 20px}
 .ux-tips li{font-size:13px;line-height:1.8;color:#3b5143;margin:0}
 .ux-tips button{min-height:38px;border-radius:10px;font-size:13px}
@@ -461,9 +465,20 @@ html[data-layout-mode="phone-portrait"] .ux-legend{display:none}
 .ux-tools-toggle{display:none}
 @media(max-width:640px){
  .ux-tools-toggle{display:inline-flex;align-items:center;gap:6px;position:absolute;top:9px;left:10px;z-index:2;min-height:38px;padding:6px 12px;border-radius:10px;background:#2f6b4a;color:#fff;font-weight:700;font-size:13px;border:1px solid #5f9478}
- header h1{padding-left:92px}
+ header{padding:9px 10px 10px}
+ header h1{padding-left:92px;font-size:15px;line-height:1.35;min-height:42px;margin:0 0 8px}
+ header .bar{grid-template-columns:minmax(0,1fr);gap:6px}
+ header .bar>#jump{display:none}
+ header.ux-tools-open .bar>#jump{display:block}
  header:not(.ux-tools-open) .bar>button,header:not(.ux-tools-open) .bar>.display-mode-switch{display:none}
+ header .bar>.save-state{grid-column:1/-1;justify-self:start;min-height:25px;max-width:100%;padding:3px 8px;font-size:10px;overflow:hidden;text-overflow:ellipsis}
  .ux-kbd{display:none}
+ .ux-tips{padding:10px 12px;margin-bottom:8px}
+ .ux-tips>summary{min-height:34px}
+ .ux-tips ul{grid-template-columns:minmax(0,1fr);gap:5px;margin:10px 0}
+ .ux-tips li{font-size:12px;line-height:1.65}
+ .portrait-row:not(.depth-0) .portrait-person{background:#fff;border-color:#dbe5dc;color:#253b2d;box-shadow:0 1px 3px #183d2908;border-inline-start:3px solid #8eaf97}
+ .portrait-row:not(.depth-0) .portrait-meta{background:#f3f6f3;color:#65756b}
 }
 @media(max-width:640px) and (orientation:portrait){
  .ux-bottom-nav{position:fixed;inset-inline:0;bottom:0;z-index:12;display:grid;grid-template-columns:repeat(4,1fr);background:#1f3b2d;border-top:2px solid var(--ux-gold);padding-bottom:env(safe-area-inset-bottom)}
@@ -1807,8 +1822,10 @@ function insertBackupBanner(){
 /* --------------------------------------------------- نصائح الاستخدام (مرة واحدة) */
 function insertTips(){
   if(!prefs.tips||$('.ux-tips',viewEl))return;
-  const el=document.createElement('section');el.className='ux-tips noprint';el.setAttribute('aria-label','نصائح الاستخدام');
-  el.innerHTML='<h3>🌿 نصائح سريعة للاستخدام</h3><ul>'+
+  const el=document.createElement('details');el.className='ux-tips noprint';el.setAttribute('aria-label','نصائح الاستخدام');
+  const phoneLayout=window.matchMedia('(max-width: 640px)').matches||(document.documentElement.dataset.layoutMode||'').startsWith('phone-');
+  el.open=!phoneLayout;
+  el.innerHTML='<summary><h3>🌿 نصائح سريعة للاستخدام</h3></summary><ul>'+
    '<li><kbd>/</kbd> للبحث السريع في كل الأسماء، وأسهم ↑ ↓ للتنقل بين النتائج.</li>'+
    '<li>اسحب المخطط بالماوس لتحريكه، و<kbd>Ctrl</kbd> + عجلة الفأرة للتكبير (وفي الجوال: قرّص بإصبعين).</li>'+
    '<li>زر ⛶ فوق المخطط يعرضه بملء الشاشة، وفوق كل اسم تظهر سلسلة نسبه عند التمرير.</li>'+
