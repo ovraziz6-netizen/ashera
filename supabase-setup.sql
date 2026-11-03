@@ -1,6 +1,6 @@
 -- Create the cloud data tables and role-based access rules.
 -- Create Auth users in Supabase first:
---   admin@ashera.local
+--   ovraziz6@gmail.com (administrator sign-in)
 --   user@ashera.local
 -- Then use the final INSERT statements to register them in ashera_members.
 -- Deploy supabase/functions/admin-set-password before using password changes in the app.
@@ -90,7 +90,7 @@ create policy "Active members can access family data"
 -- After creating and confirming both Auth users, run once:
 -- insert into public.ashera_members (user_id, username, role)
 -- select id, 'admin', 'admin' from auth.users
--- where lower(email) = 'admin@ashera.local'
+-- where lower(email) = 'ovraziz6@gmail.com'
 -- on conflict (user_id) do update set username = excluded.username, role = excluded.role, active = true;
 --
 -- insert into public.ashera_members (user_id, username, role)

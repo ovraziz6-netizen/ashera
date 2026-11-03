@@ -2074,6 +2074,7 @@ window.route();
 (() => {
   const projectUrl = 'https://rhqzcvbuigbdarvjhrvp.supabase.co';
   const publishableKey = 'sb_publishable_Bdhg9b1dj3HiodfiaM37FQ_-jyTs1PD';
+  const loginEmails = { admin: 'ovraziz6@gmail.com', user: 'user@ashera.local' };
   const client = window.supabase?.createClient(projectUrl, publishableKey);
   const authButton = document.getElementById('cloudAuthButton');
   const manageButton = document.getElementById('cloudManageButton');
@@ -2341,7 +2342,7 @@ window.route();
     const password = document.getElementById('cloudPassword').value;
     try {
       const { data, error } = await client.auth.signInWithPassword({
-        email: `${username}@ashera.local`,
+        email: loginEmails[username],
         password
       });
       if (error) throw error;
