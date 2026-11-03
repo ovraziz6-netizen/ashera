@@ -2262,15 +2262,30 @@ window.route();
         try {
           const password = passwordInput.value;
           if (password.length < 10) throw new Error('كلمة المرور يجب أن تكون 10 أحرف على الأقل.');
+          if (new TextEncoder().encode(password).byteLength > 72) {
+            throw new Error('كلمة المرور طويلة جدًا. استخدم عددًا أقل من الأحرف، خصوصًا إذا كانت بالعربية.');
+          }
           const { error: functionError } = await client.functions.invoke('admin-set-password', {
             body: { username: 'user', password }
           });
-          if (functionError) throw functionError;
+          if (functionError) {
+            let message = functionError.message;
+            if (functionError.context instanceof Response) {
+              try {
+                const responseBody = await functionError.context.clone().json();
+                if (typeof responseBody.error === 'string') message = responseBody.error;
+              } catch (parseError) {
+                console.warn('Could not read the password update error response', parseError);
+              }
+            }
+            throw new Error(message);
+          }
           passwordForm.reset();
           membersError.textContent = 'تم تغيير كلمة مرور المستخدم.';
         } catch (error) {
           console.error('Admin password update failed', error);
-          membersError.textContent = 'تعذر تغيير كلمة المرور. تأكد من نشر دالة الإدارة في Supabase ثم أعد المحاولة.';
+          const reason = error instanceof Error ? error.message : 'حدث خطأ غير معروف.';
+          membersError.textContent = `تعذر تغيير كلمة المرور: ${reason}`;
         } finally {
           passwordButton.disabled = false;
         }
